@@ -6,7 +6,6 @@ const PORT = process.env.SERVER_PORT
 connection()
 
 const cors = require('cors')
-
 // const corsUrls = process.env.ALLOWED_URL.split(',')
 // const corsOptions = {
 //   origin: function (origin, callback) {
