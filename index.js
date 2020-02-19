@@ -23,10 +23,10 @@ const cors = require('cors')
 // app.use(cors(corsOptions))
 
 app.use(cors())
-
-const posts = require('./controls/posts')
 app.use(express.json())
-app.use(posts)
+app.use(require('./controls/posts'))
+app.use(require('./controls/users'))
+
 app.use((req, res, next) => {
   res.status(404).send('<h1>404 Not Found</h1>')
 })

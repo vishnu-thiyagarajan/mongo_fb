@@ -3,6 +3,7 @@
 const mongoose = require('mongoose')
 require('dotenv').config()
 require('./post.model.js')
+require('./user.model.js')
 
 const dbPATH = `${process.env.DB_DOMAIN}:${process.env.DB_PORT}/${process.env.DB_NAME}`
 const dbURL = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${dbPATH}`
