@@ -8,7 +8,7 @@ router.get('/posts', (req, res) => {
   try {
     PostModel.find((err, docs) => {
       if (err) throw err
-      res.status(200).send(docs)
+      res.status(200).send(docs.reverse())
     })
   } catch (err) {
     console.log(err)

@@ -24,10 +24,10 @@ router.post('/users', async (req, res) => {
 router.post('/login', (req, res) => {
   UserModel.findOne({ emailid: req.body.emailid }, async function (err, docs) {
     if (err) throw (err)
-    if (!docs) return res.status(400).send('cannot find user')
+    if (!docs) return res.status(400).send({ message: 'cannot find user' })
     try {
       if (await bcrypt.compare(req.body.password, docs.password)) return res.send('logged in')
-      return res.send('wrong password')
+      return res.send({ message: 'wrong password' })
     } catch (err) {
       res.status(500).send({ message: 'server side error' })
     }
