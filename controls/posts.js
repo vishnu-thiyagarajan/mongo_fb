@@ -17,6 +17,7 @@ router.get('/posts', (req, res) => {
 })
 
 router.post('/posts', (req, res) => {
+  if (!req.body.body || !req.body.userHandle) return
   try {
     var post = new PostModel()
     post.body = req.body.body
@@ -24,7 +25,7 @@ router.post('/posts', (req, res) => {
     post.createdAt = new Date().toISOString()
     post.save((err, docs) => {
       if (err) throw err
-      res.status(201).send({ message: 'successful', status: 'OK' })
+      res.status(201).send(docs)
     })
   } catch (err) {
     console.log(err)
