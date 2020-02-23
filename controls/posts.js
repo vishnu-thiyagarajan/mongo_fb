@@ -4,11 +4,14 @@ const mongoose = require('mongoose')
 const PostModel = mongoose.model('Posts')
 const router = express.Router()
 
-router.get('/posts', (req, res) => {
+router.get('/posts/:offSet/:limit', (req, res) => {
   try {
-    PostModel.find((err, docs) => {
+    const offSet = Number(req.params.offSet)
+    const limit = Number(req.params.limit)
+    if (!offSet || !limit) return res.status(403).send({ message: 'needed offset and limit' })
+    PostModel.find().skip(offSet).limit(limit).sort({ createdAt: -1 }).exec((err, docs) => {
       if (err) throw err
-      res.status(200).send(docs.reverse())
+      res.status(200).send(docs)
     })
   } catch (err) {
     console.log(err)
