@@ -6,16 +6,16 @@ const router = express.Router()
 
 router.get('/posts/:offSet/:limit', (req, res) => {
   try {
-    const offSet = Number(req.params.offSet)
-    const limit = Number(req.params.limit)
-    if (!offSet || !limit) return res.status(403).send({ message: 'needed offset and limit' })
+    var offSet = Number(req.params.offSet)
+    var limit = Number(req.params.limit)
     PostModel.find().skip(offSet).limit(limit).sort({ createdAt: -1 }).exec((err, docs) => {
       if (err) throw err
       res.status(200).send(docs)
     })
   } catch (err) {
+    if (isNaN(offSet) || isNaN(limit)) return res.status(403).send({ message: 'offset and limit is needed' })
     console.log(err)
-    res.status(500).send({ message: 'server side error ' })
+    res.status(500).send({ message: 'server side error' })
   }
 })
 
