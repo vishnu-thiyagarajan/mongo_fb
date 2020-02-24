@@ -1,5 +1,6 @@
 const express = require('express')
 const mongoose = require('mongoose')
+const formidable = require('formidable')
 
 const PostModel = mongoose.model('Posts')
 const router = express.Router()
@@ -20,20 +21,29 @@ router.get('/posts/:offSet/:limit', (req, res) => {
 })
 
 router.post('/posts', (req, res) => {
-  if (!req.body.body || !req.body.userHandle) return
-  try {
-    var post = new PostModel()
-    post.body = req.body.body
-    post.userHandle = req.body.userHandle
-    post.createdAt = new Date().toISOString()
-    post.save((err, docs) => {
-      if (err) throw err
-      res.status(201).send(docs)
-    })
-  } catch (err) {
-    console.log(err)
-    res.status(500).send({ message: 'server side error ' })
-  }
+  var form = new formidable.IncomingForm()
+  form.parse(req)
+  form.on('fileBegin', function (name, file) {
+    file.path = __dirname + '/uploads/' + file.name
+  })
+  form.on('field', (name, field) => {
+    console.log('Field', name, field)
+  })
+  res.send('file uploaded')
+  // if (!req.body.userHandle) return
+  // try {
+  //   var post = new PostModel()
+  //   post.body = req.body.body
+  //   post.userHandle = req.body.userHandle
+  //   post.createdAt = new Date().toISOString()
+  //   post.save((err, docs) => {
+  //     if (err) throw err
+  //     res.status(201).send(docs)
+  //   })
+  // } catch (err) {
+  //   console.log(err)
+  //   res.status(500).send({ message: 'server side error ' })
+  // }
 })
 
 router.put('/posts', (req, res) => {

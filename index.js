@@ -23,6 +23,7 @@ const cors = require('cors')
 // app.use(cors(corsOptions))
 
 app.use(cors())
+
 app.use(express.json())
 app.use(require('./controls/posts'))
 app.use(require('./controls/users'))
