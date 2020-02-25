@@ -27,7 +27,7 @@ const cors = require('cors')
 app.use(cors())
 
 app.use(express.json())
-app.use('/static', express.static(path.join(__dirname, 'controls', 'uploads')))
+app.use(express.static(path.join(__dirname, 'controls', 'uploads')))
 app.use(require('./controls/posts'))
 app.use(require('./controls/users'))
 app.use((req, res, next) => {

@@ -1,6 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const formidable = require('formidable')
+const fs = require('fs')
 const path = require('path')
 const uuid = require('uuid/v1')
 
@@ -39,7 +40,6 @@ router.post('/posts', (req, res) => {
     throw err
   })
   form.on('end', () => {
-    console.log(fields)
     if (!fields.userHandle && !(fields.fileName || fields.body)) return res.status(403).send({ message: 'insufficient data' })
     try {
       var post = new PostModel()
@@ -74,6 +74,12 @@ router.delete('/posts', (req, res) => {
   try {
     PostModel.deleteOne({ _id: req.body._id }, function (err) {
       if (err) throw err
+      const filePath = path.join(__dirname, '/uploads/', req.body.fileName)
+      if (req.body.fileName && fs.existsSync(filePath)) {
+        fs.unlink(filePath, (err) => {
+          if (err) throw err
+        })
+      }
       res.status(204).send({ message: 'successful', status: 'OK' })
     })
   } catch (err) {
