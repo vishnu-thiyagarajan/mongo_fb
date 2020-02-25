@@ -24,6 +24,7 @@
     "express": "^4.17.1",
     "formidable": "^1.2.1",
     "mongoose": "^5.9.1",
-    "nodemon": "^2.0.2"
+    "nodemon": "^2.0.2",
+    "uuid": "^7.0.0"
   }
 }

@@ -1,6 +1,8 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const formidable = require('formidable')
+const path = require('path')
+const uuid = require('uuid/v1')
 
 const PostModel = mongoose.model('Posts')
 const router = express.Router()
@@ -21,29 +23,39 @@ router.get('/posts/:offSet/:limit', (req, res) => {
 })
 
 router.post('/posts', (req, res) => {
-  var form = new formidable.IncomingForm()
+  const form = new formidable.IncomingForm()
+  const imgHash = uuid()
+  const fields = {}
   form.parse(req)
-  form.on('fileBegin', function (name, file) {
-    file.path = __dirname + '/uploads/' + file.name
-  })
   form.on('field', (name, field) => {
-    console.log('Field', name, field)
+    fields[name] = field
   })
-  res.send('file uploaded')
-  // if (!req.body.userHandle) return
-  // try {
-  //   var post = new PostModel()
-  //   post.body = req.body.body
-  //   post.userHandle = req.body.userHandle
-  //   post.createdAt = new Date().toISOString()
-  //   post.save((err, docs) => {
-  //     if (err) throw err
-  //     res.status(201).send(docs)
-  //   })
-  // } catch (err) {
-  //   console.log(err)
-  //   res.status(500).send({ message: 'server side error ' })
-  // }
+  form.on('fileBegin', function (name, file) {
+    fields.fileName = imgHash + '.' + file.name.split('.').pop()
+    file.path = path.join(__dirname, '/uploads/', fields.fileName)
+  })
+  form.on('error', (err) => {
+    res.status(500).send({ message: 'server side error' })
+    throw err
+  })
+  form.on('end', () => {
+    console.log(fields)
+    if (!fields.userHandle && !(fields.fileName || fields.body)) return res.status(403).send({ message: 'insufficient data' })
+    try {
+      var post = new PostModel()
+      post.body = fields.body || ''
+      post.userHandle = fields.userHandle
+      post.fileName = fields.fileName || ''
+      post.createdAt = new Date().toISOString()
+      post.save((err, docs) => {
+        if (err) throw err
+        res.status(201).send(docs)
+      })
+    } catch (err) {
+      console.log(err)
+      res.status(500).send({ message: 'server side error ' })
+    }
+  })
 })
 
 router.put('/posts', (req, res) => {
