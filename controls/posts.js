@@ -4,11 +4,11 @@ const formidable = require('formidable')
 const fs = require('fs')
 const path = require('path')
 const uuid = require('uuid/v1')
-
+const jwt = require('jsonwebtoken')
 const PostModel = mongoose.model('Posts')
 const router = express.Router()
 
-router.get('/posts/:offSet/:limit', (req, res) => {
+router.get('/posts/:offSet/:limit', authenticateToken, (req, res) => {
   try {
     var offSet = Number(req.params.offSet)
     var limit = Number(req.params.limit)
@@ -89,3 +89,16 @@ router.delete('/posts', (req, res) => {
 })
 
 module.exports = router
+
+function authenticateToken (req, res, next) {
+  const authHeader = req.headers.authorization
+  const token = authHeader && authHeader.split(' ')[1]
+  if (token == null) return res.sendStatus(401)
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    console.log(err)
+    if (err) return res.sendStatus(403)
+    req.user = user
+    next()
+  })
+}
