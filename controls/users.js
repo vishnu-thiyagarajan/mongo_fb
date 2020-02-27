@@ -3,6 +3,10 @@ const express = require('express')
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const path = require('path')
+const uuid = require('uuid/v1')
+const formidable = require('formidable')
+const fs = require('fs')
 
 const authenticateToken = require('./auth')
 const UserModel = mongoose.model('Users')
@@ -25,6 +29,7 @@ router.post('/users', async (req, res) => {
       })
     })
   } catch (err) {
+    console.log(err)
     res.status(500).send({ message: 'server side error' })
   }
 })
@@ -42,19 +47,64 @@ router.post('/login', (req, res) => {
       }
       return res.status(403).send({ message: 'wrong password' })
     } catch (err) {
+      console.log(err)
       res.status(500).send({ message: 'server side error' })
     }
   })
 })
 
-router.get('/users', authenticateToken, (req, res) => {
+router.get('/users/:email', authenticateToken, (req, res) => {
   try {
-    UserModel.findOne({ emailid: req.body.emailid }, async (err, docs) => {
+    UserModel.findOne({ emailid: req.params.email }, (err, docs) => {
       if (err) throw (err)
-      return res.status(200).send({ userName: docs.userName })
+      if (docs) res.status(200).send({ userName: docs.userName, dp: docs.dp })
     })
   } catch (err) {
+    console.log(err)
     res.status(500).send({ message: 'server side error' })
   }
 })
+
+router.put('/users/dp', authenticateToken, (req, res) => {
+  const form = new formidable.IncomingForm()
+  const imgHash = uuid()
+  const fields = {}
+  form.parse(req)
+  form.on('field', (name, field) => {
+    fields[name] = field
+  })
+  form.on('fileBegin', function (name, file) {
+    fields.fileName = imgHash + '.' + file.name.split('.').pop()
+    file.path = path.join(__dirname, '/uploads/dp/', fields.fileName)
+  })
+  form.on('error', (err) => {
+    res.status(500).send({ message: 'server side error' })
+    throw err
+  })
+  form.on('end', async () => {
+    if (!fields.emailid && !fields.fileName) return res.status(403).send({ message: 'insufficient data' })
+    try {
+      await UserModel.findOne({ emailid: fields.emailid }, (err, docs) => {
+        if (err) throw (err)
+        if (!docs) return res.status(404).send({ message: 'cannot find user' })
+        if (docs.dp) {
+          const filePath = path.join(__dirname, '/uploads/dp/', docs.dp)
+          if (fs.existsSync(filePath)) {
+            fs.unlink(filePath, (err) => {
+              if (err) throw err
+            })
+          }
+        }
+      })
+      await UserModel.updateOne({ emailid: fields.emailid }, { dp: fields.fileName }, (err) => {
+        if (err) throw err
+        res.status(201).send({ fileName: fields.fileName, status: 'OK' })
+      })
+    } catch (err) {
+      console.log(err)
+      res.status(500).send({ message: 'server side error ' })
+    }
+  })
+})
+
 module.exports = router

@@ -74,7 +74,7 @@ router.put('/posts', authenticateToken, (req, res) => {
 
 router.delete('/posts', authenticateToken, (req, res) => {
   try {
-    PostModel.deleteOne({ _id: req.body._id }, function (err) {
+    PostModel.deleteOne({ _id: req.body._id }, function (err, docs) {
       if (err) throw err
       if (req.body.fileName) {
         const filePath = path.join(__dirname, '/uploads/', req.body.fileName)
