@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
+const authenticateToken = require('./auth')
 const UserModel = mongoose.model('Users')
 const router = express.Router()
 
@@ -28,26 +29,7 @@ router.post('/users', async (req, res) => {
   }
 })
 
-// let refreshTokens = []
-
-// router.post('/token', (req, res) => {
-//   const refreshToken = req.body.token
-//   if (refreshToken == null) return res.sendStatus(401)
-//   if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
-//   jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, data) => {
-//     if (err) return res.sendStatus(403)
-//     const accessToken = jwt.sign({ emailid: data.emailid }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15s' })
-//     res.json({ accessToken: accessToken })
-//   })
-// })
-
-// router.delete('/logout', (req, res) => {
-//   refreshTokens = refreshTokens.filter(token => token !== req.body.token)
-//   res.sendStatus(204)
-// })
-
 router.post('/login', (req, res) => {
-  console.log('88888888888888888888888888888888')
   if (!req.body.emailid) res.status(403).send({ message: 'Emailid needed' })
   const user = { emailid: req.body.emailid }
   UserModel.findOne(user, async function (err, docs) {
@@ -56,9 +38,7 @@ router.post('/login', (req, res) => {
     try {
       if (await bcrypt.compare(req.body.password, docs.password)) {
         const accessToken = jwt.sign({ emailid: req.body.emailid, user: docs.userName }, process.env.ACCESS_TOKEN_SECRET)
-        console.log(docs)
-        // res.cookie('SocializeAccessToken', accessToken)
-        return res.status(200).send({ accessToken: accessToken, loggedUser: docs.emailid })
+        return res.status(200).send({ accessToken: accessToken, loggedEmail: docs.emailid, loggedUser: docs.userName })
       }
       return res.status(403).send({ message: 'wrong password' })
     } catch (err) {
@@ -67,4 +47,14 @@ router.post('/login', (req, res) => {
   })
 })
 
+router.get('/users', authenticateToken, (req, res) => {
+  try {
+    UserModel.findOne({ emailid: req.body.emailid }, async (err, docs) => {
+      if (err) throw (err)
+      return res.status(200).send({ userName: docs.userName })
+    })
+  } catch (err) {
+    res.status(500).send({ message: 'server side error' })
+  }
+})
 module.exports = router

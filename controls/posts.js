@@ -4,7 +4,8 @@ const formidable = require('formidable')
 const fs = require('fs')
 const path = require('path')
 const uuid = require('uuid/v1')
-const jwt = require('jsonwebtoken')
+
+const authenticateToken = require('./auth')
 const PostModel = mongoose.model('Posts')
 const router = express.Router()
 
@@ -23,7 +24,7 @@ router.get('/posts/:offSet/:limit', authenticateToken, (req, res) => {
   }
 })
 
-router.post('/posts', (req, res) => {
+router.post('/posts', authenticateToken, (req, res) => {
   const form = new formidable.IncomingForm()
   const imgHash = uuid()
   const fields = {}
@@ -40,11 +41,12 @@ router.post('/posts', (req, res) => {
     throw err
   })
   form.on('end', () => {
-    if (!fields.userHandle && !(fields.fileName || fields.body)) return res.status(403).send({ message: 'insufficient data' })
+    if (!fields.userName && !fields.userHandle && !(fields.fileName || fields.body)) return res.status(403).send({ message: 'insufficient data' })
     try {
       var post = new PostModel()
       post.body = fields.body || ''
       post.userHandle = fields.userHandle
+      post.userName = fields.userName
       post.fileName = fields.fileName || ''
       post.createdAt = new Date().toISOString()
       post.save((err, docs) => {
@@ -58,7 +60,7 @@ router.post('/posts', (req, res) => {
   })
 })
 
-router.put('/posts', (req, res) => {
+router.put('/posts', authenticateToken, (req, res) => {
   try {
     PostModel.updateOne({ _id: req.body._id }, req.body, function (err) {
       if (err) throw err
@@ -70,15 +72,17 @@ router.put('/posts', (req, res) => {
   }
 })
 
-router.delete('/posts', (req, res) => {
+router.delete('/posts', authenticateToken, (req, res) => {
   try {
     PostModel.deleteOne({ _id: req.body._id }, function (err) {
       if (err) throw err
-      const filePath = path.join(__dirname, '/uploads/', req.body.fileName)
-      if (req.body.fileName && fs.existsSync(filePath)) {
-        fs.unlink(filePath, (err) => {
-          if (err) throw err
-        })
+      if (req.body.fileName) {
+        const filePath = path.join(__dirname, '/uploads/', req.body.fileName)
+        if (fs.existsSync(filePath)) {
+          fs.unlink(filePath, (err) => {
+            if (err) throw err
+          })
+        }
       }
       res.status(204).send({ message: 'successful', status: 'OK' })
     })
@@ -89,16 +93,3 @@ router.delete('/posts', (req, res) => {
 })
 
 module.exports = router
-
-function authenticateToken (req, res, next) {
-  const authHeader = req.headers.authorization
-  const token = authHeader && authHeader.split(' ')[1]
-  if (token == null) return res.sendStatus(401)
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    console.log(err)
-    if (err) return res.sendStatus(403)
-    req.user = user
-    next()
-  })
-}
