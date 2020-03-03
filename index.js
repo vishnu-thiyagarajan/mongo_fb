@@ -1,6 +1,8 @@
 const connection = require('./model')
 const path = require('path')
-
+const http = require('http')
+const socketIo = require('socket.io')
+const port = process.env.WS_PORT
 require('dotenv').config()
 const express = require('express')
 const app = express()
@@ -33,6 +35,15 @@ app.use('/api', require('./controls/users'))
 app.use((req, res, next) => {
   res.status(404).send('<h1>404 Not Found</h1>')
 })
-app.listen(PORT, () => {
+const server = http.createServer(app)
+const io = socketIo(server)
+io.on('connection', (socket) => {
+  socket.on('new message', data => {
+    console.log(data.room)
+    socket.broadcast.emit('receive message', data)
+  })
+})
+
+server.listen(PORT, () => {
   console.log(`listening on port ${PORT}`)
 })
