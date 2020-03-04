@@ -38,8 +38,10 @@ app.use((req, res, next) => {
 const server = http.createServer(app)
 const io = socketIo(server)
 io.on('connection', (socket) => {
+  socket.on('disconnect', reason => {
+    console.log('user disconnected')
+  })
   socket.on('new message', data => {
-    console.log(data.room)
     socket.broadcast.emit('receive message', data)
   })
 })
